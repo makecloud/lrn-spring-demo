@@ -23,35 +23,45 @@ import org.junit.Test;
 
 public class WeatherConsumer {
 	
-	private String baseUrlStr="http://open.weather.com.cn/data/?areaid=101190101&type=index&date=201606150000&appid=382627";
-	private String publicKey="http://open.weather.com.cn/data/?areaid=101190101&type=index&date=201606150000&appid=382627ecb7964497";
-	private String privateKey="yunge_webapi_data";
-	
-	@Test
-	public void useProp() throws FileNotFoundException, IOException{
+	/**
+	 * 调用天气服务
+	 * 
+	 * @param _url 固定url
+	 * @param areaId 区域id
+	 * @param type 数据类型
+	 * @param date 客户端日期
+	 * @param appId 固定分配的型号标识
+	 * @param privateKey 私钥
+	 * @throws IOException
+	 * @throws InvalidKeyException
+	 * @throws NoSuchAlgorithmException
+	 * @return 天气服务返回json
+	 */
+	public String invokeWeatherApiBaseJavaNet(String _url,
+			String areaId,
+			String type,
+			String date,
+			String appId,
+			String privateKey) throws IOException, InvalidKeyException, NoSuchAlgorithmException{
 		
-		Properties prop=new Properties();
-		prop.load(this.getClass().getClassLoader().getResourceAsStream("weather.properties"));
-		System.out.println(prop.toString());
-	}
-	@Test
-	public void baseJavaNet() throws IOException, InvalidKeyException, NoSuchAlgorithmException{
+		//定义请求url前缀
+		String urlPre = _url+"?areaid="+areaId+"&type="+type+"&date="+date;
 		
-		String areaId;
-		String type;
-		String date;
-		String appId;
+		//请求url拼接appid
+		String url = urlPre+"&appid="+appId.substring(0,6);
 		
+		//拼publicKey
+		String publicKeyStr=urlPre+"&appid="+appId;
 		
-		//生成url后缀
-		String urlSuffix = URLEncoder.encode(Base64.encodeBase64String(HMACSHA1.encrypt(publicKey.getBytes(), privateKey.getBytes())));
+		//生成key密文
+		String key = URLEncoder.encode(Base64.encodeBase64String(HMACSHA1.encrypt(publicKeyStr.getBytes(), privateKey.getBytes())));
 		
-		//url拼接密key
-		URL url=new URL(baseUrlStr+"&key="+urlSuffix);
-		System.out.println("完整url："+url);
+		//请求url拼接key
+		URL uRL=new URL(url+"&key="+key);
+		System.out.println("完整url："+uRL);//test be deleted
 		
 		//建立url连接
-		URLConnection uc = url.openConnection();
+		URLConnection uc = uRL.openConnection();
 		
 		//连接
 		uc.connect();
@@ -62,59 +72,68 @@ public class WeatherConsumer {
 		//获取输入reader
 		BufferedReader br = new BufferedReader(new InputStreamReader(is,"utf8"));
 		
+		//返回值变量
+		StringBuilder retSB = new StringBuilder();
+		
 		//读取内容
 		String line;
 		while ((line = br.readLine())!=null){
-			System.out.println(line);
+			retSB.append(line);
 		}
 		br.close();
 		is.close();
 		
-	}
-	@Test
-	public void testBase64() throws InvalidKeyException, NoSuchAlgorithmException{
-		String base64Result = Base64.encodeBase64String(HMACSHA1.encrypt(publicKey.getBytes(), privateKey.getBytes()));
-		System.out.println(base64Result);
-		String urlsuffix = URLEncoder.encode(base64Result);
-		System.out.println(urlsuffix);
-	}
-	/**
-	 * 测试使用 commons-httpclient 
-	 * 
-	 * @throws HttpException
-	 * @throws IOException
-	 * @throws InvalidKeyException
-	 * @throws NoSuchAlgorithmException
-	 */
-	@Test
-	public void baseHttpClient() throws HttpException, IOException, InvalidKeyException, NoSuchAlgorithmException{
-		//加密生成密key并base64编码
-		String base64ResultStr = Base64.encodeBase64String(HMACSHA1.encrypt(publicKey.getBytes(), privateKey.getBytes()));
-		
-		//生成url后缀
-		String urlSuffix = URLEncoder.encode(base64ResultStr);
-		
-		String url = baseUrlStr+"&key="+urlSuffix;
-		
-		HttpClient httpClient = new HttpClient();
-		
-		HttpMethod method =  new GetMethod(url);
-		
-		httpClient.executeMethod(method);
-		
-		//打印服务器返回的状态
-		System.out.println(method.getStatusCode());
-		
-		String response = new String (method.getResponseBody(),"utf8");
-		//打印返回的信息
-		System.out.println(response);
-		
-		//释放连接
-		method.releaseConnection();
-		
+		return retSB.toString();
 	}
 	
-
-	public static void main(String[] args) {
+	
+	
+	
+	/**
+	 * 调用天气服务
+	 * 
+	 * @param _url 固定url
+	 * @param areaid 区域ID
+	 * @param type 数据类型  例：observ（实况）
+	 * @param date 客户端日期
+	 * @param appid 固定分配的型号标识
+	 * @param privateKey 密钥
+	 * @return
+	 * @throws InvalidKeyException
+	 * @throws NoSuchAlgorithmException
+	 * @throws HttpException
+	 * @throws IOException
+	 */
+	public String invokeWeatherApiBaseHttpClient(String _url,
+			String areaid,
+			String type,
+			String date,
+			String appid,
+			String privateKey) throws InvalidKeyException, NoSuchAlgorithmException, HttpException, IOException{
+		//请求url前缀
+		String urlPre = _url+"?areaid="+areaid+"&type="+type+"&date="+date;
+		
+		//公钥
+		String publicKeyStr=urlPre+"&appid="+appid;
+		
+		//加密生成密key并base64编码，url编码
+		String key = URLEncoder.encode(Base64.encodeBase64String(HMACSHA1.encrypt(publicKeyStr.getBytes(), privateKey.getBytes())));
+		
+		//请求url拼接key
+		String requestUrl = urlPre+"&appid="+appid.substring(0,6)+"&key="+key;
+		
+		/**
+		 * 调用天气服务
+		 */
+		HttpClient client = new HttpClient();
+		
+		HttpMethod method = new GetMethod(requestUrl);
+		
+		client.executeMethod(method);
+		
+		String retStr = new String(method.getResponseBody(),"utf8");
+		
+		return retStr;
 	}
+
 }
