@@ -47,7 +47,7 @@ public class TestWeatherConsumer {
 		String url="http://open.weather.com.cn/data/";
 		String areaId="101190101";
 		String type="index";
-		String date="201606211600";
+		String date="201606220000";
 		String appId="382627ecb7964497";
 		String privateKey="yunge_webapi_data";
 		String invokeResult = weatherConsumer.invokeWeatherApiBaseHttpClient(url,areaId,type,date,appId,privateKey);
