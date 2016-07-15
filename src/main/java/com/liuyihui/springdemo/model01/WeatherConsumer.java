@@ -32,6 +32,7 @@ public class WeatherConsumer {
 	 * @param date 客户端日期
 	 * @param appId 固定分配的型号标识
 	 * @param privateKey 私钥
+	 * 
 	 * @throws IOException
 	 * @throws InvalidKeyException
 	 * @throws NoSuchAlgorithmException
